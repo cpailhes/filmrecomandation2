@@ -2,10 +2,14 @@
 from flask import Flask, request
 import pandas as pd
 import numpy as np
-
+import math
 
 # create the Flask app
 app = Flask(__name__)
+
+
+gaussian_filter = lambda x,y,sigma: math.exp(-(x-y)**2/(2*sigma**2))
+
 
 @app.route('/recommandation' , methods=['GET', 'POST'])
 
@@ -19,12 +23,11 @@ def recommandation():
         sample =request.args.get('sample')
         if not sample :
             sample="yes"
-        cluster_KMeans=df_result[df_result.movie_title==m].cluster_KMeans.values
-        if cluster_KMeans.size != 0 :
-                dfresult =df_result[df_result['cluster_KMeans']==cluster_KMeans[0]]    
-                dfresult =dfresult[df_result['movie_title']!=m]
+        
                 
         def recommend(m ,sample):
+            cluster_KMeans=df_result[df_result.movie_title==m].cluster_KMeans.values
+                
             if cluster_KMeans.size != 0 :
                 dfresult =df_result[df_result['cluster_KMeans']==cluster_KMeans[0]]    
                 dfresult =dfresult[df_result['movie_title']!=m]
@@ -33,13 +36,13 @@ def recommandation():
                     dfresult = dfresult.reset_index()
                     return (dfresult[['movie_title']]).to_html()
                 else:
-                    dfresult1['note'] = 0
-                    for index, row in dfresult1.iterrows():
+                    dfresult['note'] = 0
+                    for index, row in dfresult.iterrows():
                         row['note'] = gaussian_filter( row['tsne-2d-one'], row['tsne-2d-two'],10) 
-                    dfresult1.sort_values('note', ascending=False)
-                    dfresult1 = dfresult1.head(5)
-                    return (dfresult1[['movie_title']]).to_html()
-             else:
+                    dfresult.sort_values('note', ascending=False)
+                    dfresult = dfresult.head(5)
+                    return (dfresult[['movie_title']]).to_html()
+            else :
                 print('no movie')
                 return 'no movie found for :{}'.format(Movie)
     
